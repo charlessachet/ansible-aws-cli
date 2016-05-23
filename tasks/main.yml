@@ -1,44 +1,45 @@
 ---
+- name: 'Install wget'
+  yum: name=wget state=latest
+
+- name: 'Download Python PIP'
+  tags: 'aws-cli'
+  command: wget https://bootstrap.pypa.io/get-pip.py -P /tmp
+  
 - name: 'Install Python PIP'
   tags: 'aws-cli'
-  sudo: 'yes'
-  apt: >
-    pkg=python-pip
-    state=latest
+  command: python /tmp/get-pip.py
 
-- name: 'Install AWS CLI'
+- name: 'Remove get-pip.py file'
   tags: 'aws-cli'
-  sudo: 'yes'
-  pip: >
-    name=awscli
-    state=latest
+  command: rm /tmp/get-pip.py
 
-- name: Set home directory of the user
-  set_fact:
-    home_dir: /home/{{ aws_cli_user }}
-  when: "not \"{{ aws_cli_user }}\" == \"root\""
-
-- name: Set home directory for root
-  set_fact:
-    home_dir: /root
-  when: "\"{{ aws_cli_user }}\" == \"root\""
+- name: 'Install AWS CLI' 
+  tags: 'aws-cli'
+  pip: name=awscli
 
 - name: 'Create the AWS config directory'
   tags: 'aws-cli'
-  sudo: 'yes'
   file: >
     path={{ home_dir }}/.aws
     state=directory
-    owner={{ aws_cli_user }}
-    group={{ aws_cli_user }}
     mode=0755
 
 - name: 'Copy AWS CLI config'
   tags: 'aws-cli'
-  sudo: 'yes'
   template: >
     src=aws_cli_config.j2
-    dest={{ home_dir }}/.aws/config
-    owner={{ aws_cli_user }}
-    group={{ aws_cli_user }}
+    dest={{ home_dir }}/.aws/credentials
     mode=0644
+
+- name: 'Copy aws-s3-sync unit files'
+  template: src={{ item.src }} dest={{ item.dest }} mode={{ item.mode }}
+  with_items:
+    - { src: 'aws-s3-sync.service', dest: '/etc/systemd/system/', mode: '0644' }
+    - { src: 'aws-s3-sync.timer', dest: '/etc/systemd/system/', mode: '0644' }
+
+- name: 'Enable aws-s3-sync unit'
+  shell: systemctl enable aws-s3-sync.timer
+
+- name: 'Start aws-s3-sync unit'
+  shell: systemctl start aws-s3-sync.timer
