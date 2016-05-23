@@ -1,0 +1,9 @@
+[Unit]
+Description=AWS Sync from S3
+
+[Service]
+ExecStart=
+ExecStart=/bin/aws --profile {{ aws_cli_user }} s3 sync s3://{{ aws_s3_bucket }} {{ home_dir }}/{{ aws_s3_bucket }} 
+
+[Install]
+DefaultInstance=1

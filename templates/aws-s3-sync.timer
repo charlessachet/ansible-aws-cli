@@ -1,0 +1,9 @@
+[Unit]
+Description=AWS Sync from S3 schedule timer
+
+[Timer]
+OnActiveSec=60s
+OnUnitActiveSec=300s
+
+[Install]
+WantedBy=multi-user.target
